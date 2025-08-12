@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <RootNamespace>Technical_Test.Application</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MediatR" Version="13.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Technical-Test.Common\Technical-Test.Common\Technical-Test.Common.csproj" />
+    <ProjectReference Include="..\..\Technical-Test.Domain\Technical-Test.Domain.csproj" />
+    <ProjectReference Include="..\..\Technical-Test.Infrastructure\Technical-Test.Infrastructure.Repositories\Technical-Test.Infrastructure.Repositories.csproj" />
+  </ItemGroup>
+
+</Project>

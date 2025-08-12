@@ -1,0 +1,157 @@
+﻿@page "/timesheet"
+@using MediatR
+@using TechnicalTest.Application.Timesheets
+@using TechnicalTest.Application.Users
+@attribute [StreamRendering]
+@rendermode InteractiveServer
+
+<PageTitle>Timesheet</PageTitle>
+
+@if (_timesheetsRequestResponse is null || _userResponse is null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <h1>Timesheet for user @_userResponse.UserName (@_userResponse.UserId)</h1>
+
+    <input style="padding: 0.5rem;" type="text" placeholder="Date" @bind="@_timesheetUpdateCommand!.Date" @oninput="OnInputEventDate" />
+    <input style="padding: 0.5rem;" type="text" placeholder="Hours" @bind="@_timesheetUpdateCommand!.Hours" @oninput="OnInputEventHours" />
+    <input style="padding: 0.5rem;" type="text" placeholder="Description" @bind="@_timesheetUpdateCommand!.Description" @oninput="OnInputEventDescription" />
+    <button style="padding: 0.5rem;" class="btn btn-primary" @onclick="EnterTimeSheetEntry">Add or update time sheet entry</button>
+    <input style="padding: 0.5rem;" type="text" placeholder="Filter by this years week no." @bind="@_timesheetsRequestQuery!.WeekNumber" @oninput="OnInputEventWeekNumber" />
+    <button style="padding: 0.5rem;" class="btn btn-light" @onclick="ReadTimeSheets">Apply filter</button>
+
+    @if (_timesheetUpdateResponse is null || _timesheetUpdateResponse?.IsUnProcessed == true)
+    {
+        <div style="color: blue; padding: 0.5rem;">Add or update a timesheet entry for a valid day on the current pre-set project (id @SIMULATED_DATA_PROJECT_ID). <br/>Will remove an entry on zero hours, Will just update description if no hour(s) value entered</div>
+    }
+    @if (_timesheetUpdateResponse?.IsSuccess == true)
+    {
+        <div style="font-weight:bold; color: green; padding: 0.5rem;">Timesheet updated</div>
+    }
+    @if (_timesheetUpdateResponse?.IsError == true)
+    {
+        <div style="color: red; padding: 0.5rem;">Timesheet update error: @_timesheetUpdateResponse!.ErrorMessage</div>
+    }
+    @if (_timesheetsRequestResponse?.IsError == true)
+    {
+        <div style="color: red; padding: 0.5rem;">Filter timesheet error: @_timesheetsRequestResponse!.ErrorMessage</div>
+    }
+
+    <table style="padding-top: 1rem;" class="table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Week of year</th>
+                <th>Hours recorded</th>
+                <th>Description</th>
+                <th>On project (identifier)</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var timeSheetEntry in _timesheetsRequestResponse!.DailyTimesheets)
+            {
+                <tr>
+                    <td>@timeSheetEntry.Date</td>
+                    <td>@timeSheetEntry.WeekOfYear</td>
+                    <td>@timeSheetEntry.HoursDisplay</td>
+                    <td>@timeSheetEntry.Description</td>
+                    <td>@timeSheetEntry.ProjectDisplay</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <table style="padding-top: 1rem; width: fit-content" class="table">
+        <thead>
+            <tr>
+                <th>Project details</th>
+                <th>Total hours</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var projectEntry in _timesheetsRequestResponse.Projects)
+            {
+                <tr>
+                    <td>@projectEntry.NameDisplay (@projectEntry.ProjectId)</td>
+                    <td>@projectEntry.TotalHoursDisplay</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    public static string SIMULATED_DATA_USER_ID = Guid.Parse("b1f8c5d2-3e4f-4c5a-9b6d-7e8f9a0b1c2d").ToString();
+    public static string SIMULATED_DATA_PROJECT_ID = Guid.Parse("c2d3e4f5-6a7b-8c9d-0e1f-2a3b4c5d6e7f").ToString();
+
+    [Inject]
+    private ITimesheetsHandlersValidationService _timesheetsRequestQueryHandlerService { get; set; }
+
+    [Inject]
+    private IMediator _mediator { get; set; }
+
+    public UserRequestResponse? _userResponse = null;
+
+    public TimesheetsRequestQuery? _timesheetsRequestQuery = new TimesheetsRequestQuery(SIMULATED_DATA_USER_ID);
+    public TimesheetsRequestResponse? _timesheetsRequestResponse = null;
+
+    public TimesheetUpdateCommand? _timesheetUpdateCommand = new TimesheetUpdateCommand();
+    public TimesheetUpdateResponse? _timesheetUpdateResponse = null;
+
+    public Timesheet(IMediator mediator, ITimesheetsHandlersValidationService timesheetsRequestQueryHandlerService)
+    {
+        _timesheetsRequestQueryHandlerService = timesheetsRequestQueryHandlerService;
+        _mediator = mediator;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ReadUser();
+        await ReadTimeSheets();
+    }
+
+    protected async Task ReadUser()
+    {
+        _userResponse = await _mediator.Send(new UserRequestQuery(SIMULATED_DATA_USER_ID));
+    }
+
+    protected void OnInputEventWeekNumber(ChangeEventArgs changeEvent)
+    {
+        _timesheetsRequestQuery!.WeekNumber = (string)changeEvent.Value!;
+    }
+
+    protected async Task ReadTimeSheets()
+    {
+        _timesheetsRequestResponse = await _mediator.Send(_timesheetsRequestQuery!);
+    }
+
+    protected void OnInputEventDate(ChangeEventArgs changeEvent)
+    {
+        _timesheetUpdateCommand!.Date = (string)changeEvent.Value!;
+    }
+
+    protected void OnInputEventHours(ChangeEventArgs changeEvent)
+    {
+        _timesheetUpdateCommand!.Hours = (string)changeEvent.Value!;
+    }
+
+    protected void OnInputEventDescription(ChangeEventArgs changeEvent)
+    {
+        _timesheetUpdateCommand!.Description = (string)changeEvent.Value!;
+    }
+
+    protected async Task EnterTimeSheetEntry()
+    {
+        _timesheetUpdateCommand!.UserId = SIMULATED_DATA_USER_ID;
+        _timesheetUpdateCommand!.ProjectId = SIMULATED_DATA_PROJECT_ID;
+
+        _timesheetUpdateResponse = await _mediator.Send(_timesheetUpdateCommand!);
+        if (_timesheetUpdateResponse.IsSuccess)
+        {
+            _timesheetsRequestQuery!.WeekNumber = string.Empty;
+            await ReadTimeSheets();
+        }
+    }
+}
