@@ -18,3 +18,5 @@ Technical-Test.Tests/Common.Tests/obj
 Technical-Test.Tests/Application.Tests/obj
 Technical-Test.Tests/Application.Tests/bin
 Technical-Test/.vs
+Technical-Test.Tests/Common.Tests/bin
+Technical-Test.Tests/Domain.Tests/bin
