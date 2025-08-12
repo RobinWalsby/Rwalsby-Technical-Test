@@ -20,3 +20,5 @@ Technical-Test.Tests/Application.Tests/bin
 Technical-Test/.vs
 Technical-Test.Tests/Common.Tests/bin
 Technical-Test.Tests/Domain.Tests/bin
+Technical-Test/Technical-Test/bin
+Technical-Test/Technical-Test/obj
